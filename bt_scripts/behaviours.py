@@ -30,7 +30,7 @@ class Rotate(py_trees.behaviour.Behaviour):
 				raise KeyError(error_message) from e  # 'direct cause' traceability
 		
 		self.publisher = self.node.create_publisher(
-            msg_type=geometry_msgs.Twist,
+            msg_type=geometry_msgs.TwistStamped,
             topic=self.topic_name,
             qos_profile=py_trees_ros.utilities.qos_profile_latched()
 		)
@@ -38,10 +38,12 @@ class Rotate(py_trees.behaviour.Behaviour):
 
 	def update(self) -> py_trees.common.Status:
 		self.logger.debug("%s.update()" % self.__class__.__name__)
-		msg = geometry_msgs.Twist()
-		msg.angular.z = self.vel * ((-1)** (1*(not self.counterclockwise)))
+		# TurtleBot3 on ROS 2 Jazzy listens to geometry_msgs/TwistStamped on /cmd_vel
+		msg = geometry_msgs.TwistStamped()
+		msg.header.stamp = self.node.get_clock().now().to_msg()
+		msg.twist.angular.z = self.vel * ((-1)** (1*(not self.counterclockwise)))
 		self.publisher.publish(msg)
-		self.feedback_message = "Publishing rotation:" + str(msg.angular.z)
+		self.feedback_message = "Publishing rotation:" + str(msg.twist.angular.z)
 		return py_trees.common.Status.SUCCESS
 	
 	def terminate(self, new_status: py_trees.common.Status) -> None:
